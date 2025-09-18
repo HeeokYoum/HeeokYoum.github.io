@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>애니어그램 유형 진단지</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        .intro-form, .question-section {
+            margin-bottom: 20px;
+        }
+        .intro-form input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .question-section h2 {
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            color: #555;
+        }
+        .options-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .options-container button {
+            background-color: #e9e9e9;
+            border: 1px solid #ccc;
+            color: #333;
+            padding: 12px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 1em;
+            flex: 1 1 150px;
+        }
+        .options-container button:hover {
+            background-color: #ddd;
+        }
+        .options-container button.selected {
+            background-color: #007BFF;
+            color: #fff;
+            border-color: #007BFF;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-buttons button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s;
+        }
+        .nav-buttons button:hover {
+            background-color: #218838;
+        }
+        #result-section h2 {
+            color: #007BFF;
+            font-size: 1.5em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="intro-page">
+        <h1>애니어그램 유형 진단지</h1>
+        <div class="intro-form">
+            <input type="text" id="name" placeholder="이름" required>
+            <input type="text" id="grade" placeholder="학년" required>
+            <input type="text" id="subject" placeholder="종목" required>
+            <button onclick="startQuiz()">시작하기</button>
+        </div>
+    </div>
+
+    <div id="quiz-page" style="display: none;">
+        <h2 id="question-text"></h2>
+        <div class="options-container">
+            <button data-score="5">정말 그렇다 (5점)</button>
+            <button data-score="4">그런 편이다 (4점)</button>
+            <button data-score="3">그저 그렇다 (3점)</button>
+            <button data-score="2">그렇지 않다 (2점)</button>
+            <button data-score="1">전혀 아니다 (1점)</button>
+        </div>
+        <div class="nav-buttons">
+            <button id="next-btn">다음</button>
+        </div>
+    </div>
+
+    <div id="result-page" style="display: none;">
+        <h1>진단 결과</h1>
+        <div id="result-text"></div>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        "나는 어떤 일에서든 빈틈이 있는 것을 쉽게 발견한다.",
+        "나는 일을 할 때 혼자 하는 것보다 여럿이 같이하는 것을 좋아한다.",
+        "나는 나 자신의 발전과 성공을 위해 많은 시간을 할애한다.",
+        "나는 많은 사람들 가운데 한 사람이 아니라 유일하게 독특한 사람이다.",
+        "나는 어떤 일을 하든 생각을 많이 하고 집중하고 몰입한다.",
+        "나는 돌다리도 두드려보고 건너는 안전 지향적인 사람이다.",
+        "나는 즐겁고 재미있는 인생을 살고 싶다.",
+        "나는 리더이고 싶고, 실제로 어디에 가든 리더일 때가 많다.",
+        "나는 나 자신에 대해 '이만하면 됐다'고 생각하며 만족한다.",
+        "나는 내가 맡은 일을 다 완수하기 전에는 다른 일들 하기 힘이 든다.",
+        "나는 다른 사람들이 나를 칭찬하고 인정해 주는 것을 좋아한다.",
+        "나는 다른 사람들의 슬픔을 보면 나도 모르게 눈물이 난다.",
+        "나는 새로운 것이나 경험에 대해 큰 기대를 가지고 있다.",
+        "나는 사람들 앞에서 당당하고 힘이 넘치는 모습을 보이고 싶다.",
+        "나는 누군가에게 지배받기보다 내가 주도권을 잡고 싶어한다.",
+        "나는 다른 사람들과의 갈등을 피하고 싶어 한다.",
+        "나는 옳고 그름을 명확하게 가려내고 싶어 한다.",
+        "나는 다른 사람들에게 꼭 필요한 사람인지에 대해 신경을 많이 쓴다.",
+        "나는 계획 없이 일을 추진하면 나중에 후회할 일이 많다.",
+        "나는 신비롭고 감성적인 면이 있다.",
+        "나는 혼자 있을 때가 가장 좋다.",
+        "나는 내가 속한 모임이나 집단의 분위기를 즐겁게 만들어 준다.",
+        "나는 다른 사람들이 나의 능력을 인정하고 신뢰하기를 바란다.",
+        "나는 내가 하는 일을 다른 사람에게 강요하기보다, 그들의 의견을 존중하며 함께하고 싶다.",
+        "나는 의무감 때문에 억지로 하는 일에는 성과를 올리기 어렵다.",
+        "나는 책임감이 강하고 무슨 일이든 약속을 지키려 노력한다.",
+        "나는 많은 사람들이 나를 필요로 하고 의지하기를 바란다.",
+        "나는 나의 느낌과 감정을 잘 이해한다.",
+        "나는 나만의 비밀스러운 공간이 있다.",
+        "나는 나의 즐거움을 방해하는 사람을 용납하지 않는다.",
+        "나는 불의를 보면 참지 못하고, 정의를 위해 싸운다.",
+        "나는 어떤 경쟁이든 피하고 싶고, 그냥 시간이 흐르면 해결되도록 내버려둔다.",
+        "나는 '대충'하는 것은 정말 싫다.",
+        "나는 다른 사람들에게 도움을 주며 살아가는 것이 행복하다.",
+        "나는 항상 나의 모습을 객관적으로 보고 싶어 한다.",
+        "나는 낭만적이고 감상적인 편이다.",
+        "나는 늘 새로운 것을 배우고 탐구하고 싶어 한다.",
+        "나는 나와 다른 의견을 가진 사람과도 조화를 이루고 싶다.",
+        "나는 나의 생각과 감정이 매우 깊고 복잡하다고 느낀다.",
+        "나는 지루하고 반복적인 일은 싫다.",
+        "나는 내가 결정하고 행동하는 것이 옳다고 믿는다.",
+        "나는 다른 사람들이 나를 진실하고 믿음직한 사람으로 여겨주기를 바란다.",
+        "나는 다른 사람들에게 부담을 주거나 의지하고 싶지 않다.",
+        "나는 내 주변 사람들의 감정 변화에 민감하게 반응한다.",
+        "나는 나의 능력과 재능을 마음껏 발휘하며 살고 싶다.",
+        "나는 일을 할 때 체계적이고 조직적으로 진행하는 것을 좋아한다.",
+        "나는 '내가 없으면 이 일이 제대로 될까?' 하고 걱정할 때가 있다.",
+        "나는 감정적으로 솔직하고 싶지만, 내 감정을 표현하기 어려워한다.",
+        "나는 사람들과 깊이 있는 관계를 맺고 싶어한다.",
+        "나는 자유로운 영혼을 가진 사람이다.",
+        "나는 나의 힘과 영향력을 과시하고 싶어 한다.",
+        "나는 다른 사람들이 나를 따뜻하고 친절한 사람으로 생각하기를 바란다.",
+        "나는 가끔 나 자신을 잃어버릴 정도로 다른 사람들에게 맞추려고 한다.",
+        "나는 내가 알고 있는 지식이나 기술을 다른 사람들에게 알려주는 것을 좋아한다.",
+        "나는 어떤 일이든 스스로 결정하고 싶다.",
+        "나는 평화롭고 조화로운 분위기를 좋아한다.",
+        "나는 내가 가진 것을 다른 사람들과 나누는 것에 인색하지 않다.",
+        "나는 나를 방해하는 사람을 만나면 쉽게 화가 난다.",
+        "나는 내가 옳다고 생각하는 것을 위해 다른 사람과 싸울 수 있다.",
+        "나는 다른 사람들의 기분을 맞춰주는 것이 편하다.",
+        "나는 나의 의견을 말하기 전에 다른 사람들의 의견을 먼저 듣는다.",
+        "나는 솔직하고 직설적인 편이다.",
+        "나는 어떤 일이든 끝까지 책임지고 완수한다.",
+        "나는 왠지 모르게 불안하고 걱정이 많다.",
+        "나는 다른 사람들이 보지 못하는 것을 볼 수 있다.",
+        "나는 새로운 사람들을 만나고 새로운 장소를 여행하는 것을 좋아한다.",
+        "나는 나 자신이 완벽하지 않다는 것을 잘 안다.",
+        "나는 다른 사람들을 배려하고 챙겨주는 것을 좋아한다.",
+        "나는 새로운 것을 시작하기 전에 신중하게 준비한다.",
+        "나는 내가 남들과 다르다는 사실에 자부심을 느낀다.",
+        "나는 다른 사람들에게 의지하는 것보다 혼자서 해결하는 것이 편하다.",
+        "나는 나의 생각을 명확하게 표현하는 것을 즐긴다.",
+        "나는 갈등을 일으키지 않기 위해 내 의견을 포기할 때가 많다.",
+        "나는 어떤 상황에서도 유머 감각을 잃지 않는다.",
+        "나는 내가 좋아하는 사람들을 보호하고 싶다.",
+        "나는 내가 하는 일이 다른 사람들에게 인정받고 존경받기를 바란다.",
+        "나는 매사에 조심스럽고, 안전을 우선으로 생각한다.",
+        "나는 다른 사람들에게 인정받지 못하면 불안해진다.",
+        "나는 어떤 일이든 공정하고 정의롭게 처리해야 한다고 생각한다.",
+        "나는 나 자신보다 다른 사람의 행복을 더 중요하게 생각한다.",
+        "나는 가끔 내가 누구인지 혼란스러울 때가 있다.",
+        "나는 나의 생각과 아이디어가 특별하다고 생각한다.",
+        "나는 나는 내가 잘할 수 있는 일만 하려고 한다.",
+        "나는 새로운 경험이나 활동에 흥미가 많다.",
+        "나는 남들의 시선을 신경 쓰지 않고 내가 원하는 대로 행동한다.",
+        "나는 내가 다른 사람들에게 도움이 될 때 행복하다.",
+        "나는 어떤 일을 결정할 때 신중하고 조심스럽다.",
+        "나는 남들과 같은 것은 싫고 나만의 개성을 드러내고 싶다.",
+        "나는 다른 사람들의 기분을 잘 헤아려준다.",
+        "나는 다른 사람들이 나의 능력을 높이 평가해 주기를 바란다.",
+        "나는 갈등을 피하기 위해 내 주장을 굽히기도 한다.",
+        "나는 내가 맡은 일을 다 끝내고 나서야 마음이 편해진다.",
+        "나는 새로운 아이디어와 경험을 좋아한다."
+    ];
+
+    const typeMapping = {
+        '1유형': [1, 10, 19, 28, 37, 46, 55, 64, 73],
+        '2유형': [2, 11, 20, 29, 38, 47, 56, 65, 74],
+        '3유형': [3, 12, 21, 30, 39, 48, 57, 66, 75],
+        '4유형': [4, 13, 22, 31, 40, 49, 58, 67, 76],
+        '5유형': [5, 14, 23, 32, 41, 50, 59, 68, 77],
+        '6유형': [6, 15, 24, 33, 42, 51, 60, 69, 78],
+        '7유형': [7, 16, 25, 34, 43, 52, 61, 70, 79],
+        '8유형': [8, 17, 26, 35, 44, 53, 62, 71, 80],
+        '9유형': [9, 18, 27, 36, 45, 54, 63, 72, 81]
+    };
+
+    let currentQuestionIndex = 0;
+    const scores = new Array(questions.length).fill(0);
+
+    const introPage = document.getElementById('intro-page');
+    const quizPage = document.getElementById('quiz-page');
+    const resultPage = document.getElementById('result-page');
+    const questionText = document.getElementById('question-text');
+    const options = document.querySelectorAll('.options-container button');
+    const nextBtn = document.getElementById('next-btn');
+    const resultText = document.getElementById('result-text');
+
+    function startQuiz() {
+        const name = document.getElementById('name').value;
+        const grade = document.getElementById('grade').value;
+        const subject = document.getElementById('subject').value;
+
+        if (name && grade && subject) {
+            introPage.style.display = 'none';
+            quizPage.style.display = 'block';
+            loadQuestion();
+        } else {
+            alert('모든 정보를 입력해주세요.');
+        }
+    }
+
+    function loadQuestion() {
+        if (currentQuestionIndex < questions.length) {
+            questionText.textContent = `${currentQuestionIndex + 1}번. ${questions[currentQuestionIndex]}`;
+            options.forEach(button => {
+                button.classList.remove('selected');
+                button.disabled = false;
+            });
+            nextBtn.disabled = true;
+        } else {
+            calculateResult();
+        }
+    }
+
+    options.forEach(button => {
+        button.addEventListener('click', () => {
+            options.forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+            scores[currentQuestionIndex] = parseInt(button.dataset.score);
+            nextBtn.disabled = false;
+        });
+    });
+
+    nextBtn.addEventListener('click', () => {
+        currentQuestionIndex++;
+        loadQuestion();
+    });
+
+    function calculateResult() {
+        quizPage.style.display = 'none';
+        resultPage.style.display = 'block';
+
+        const typeScores = {
+            '1유형': 0, '2유형': 0, '3유형': 0, '4유형': 0,
+            '5유형': 0, '6유형': 0, '7유형': 0, '8유형': 0, '9유형': 0
+        };
+
+        for (const type in typeMapping) {
+            typeMapping[type].forEach(qNum => {
+                typeScores[type] += scores[qNum - 1];
+            });
+        }
+
+        let maxScore = 0;
+        let resultType = '';
+
+        for (const type in typeScores) {
+            if (typeScores[type] > maxScore) {
+                maxScore = typeScores[type];
+                resultType = type;
+            }
+        }
+
+        resultText.innerHTML = `<h2>당신은 ${resultType}입니다.</h2>`;
+    }
+</script>
+
+</body>
+</html>
